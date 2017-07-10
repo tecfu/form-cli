@@ -4,7 +4,7 @@
   "description": "A command line utility to populate placeholders in a form template and save or print the output.",
   "main": "src/main.js",
   "scripts": {
-    "test": "grunt t"
+    "test": ""
   },
   "repository": {
     "type": "git",
@@ -23,7 +23,6 @@
   },
   "homepage": "https://github.com/tecfu/form-cli#readme",
   "dependencies": {
-    "node-printer": "^1.0.2",
     "printer": "^0.2.2",
     "readline-sync": "^1.4.7",
     "tty-table": "^2.5.3",
