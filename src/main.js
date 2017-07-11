@@ -16,7 +16,6 @@ yargs.option('save',{
   default:false
 });
 
-
 const readlineSync = require('readline-sync');
 const insertValue = function(key,obj){
   let keyName = key.replace(/%/g,'');
@@ -29,7 +28,7 @@ const reviewValues = function(obj){
   let table = require('tty-table');
   let header = [
     {
-      value: '#',
+      value: 'Line #',
     },
     {
       value: 'Field'
@@ -45,14 +44,20 @@ const reviewValues = function(obj){
   console.log(reviewTable);
 
   if (!readlineSync.keyInYN('Is this correct?')) {
-    let editLine = readlineSync.question('Enter the line number of a value that needs editing, or leave blank to skip.');
-    editLine = editLine*1;
-    if(typeof editLine === 'number' && editLine < rows.length){
-      let checkKey = rows[editLine][1];
-      insertValue(checkKey,obj);
-    }
-    else{
-      console.log('Entry not recognized. Try again.');
+    let text = 'Enter the line number for each value that needs editing.\nSeparated the numbers by commas.\nLeave blank to skip.';
+    let values = readlineSync.question(text);
+    if(values.length){
+      let editsArr = values.split(',');
+      editsArr.forEach(function(valueStr){
+        let value = valueStr * 1;
+        if(typeof value === 'number' && value < rows.length){
+          let checkKey = rows[value][1];
+          insertValue(checkKey,obj);
+        }
+        else{
+          console.log('Entry '+valueStr+' not recognized. Try again.');
+        }
+      })
     }
     reviewValues(obj);
   }
