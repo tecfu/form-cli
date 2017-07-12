@@ -48,7 +48,7 @@ const reviewValues = function(obj){
   let reviewTable = table(header,rows).render();
   console.log(reviewTable);
 
-  console.log('Is this correct?');
+  console.log('Is this correct? y/n');
   let reviewAnswer = readlineSync.prompt({
     limit: ['y','n']
   });
@@ -80,8 +80,14 @@ let tpl = fs.readFileSync(tplPath,{
   encoding: 'utf8'
 });
 
-//scan the template for placeholders - ignore duplicates
-let placeholderArr = tpl.match(/(%\w*%)(?!.*\1)/g);
+//scan the template for placeholders 
+let matches = tpl.match(/(%\w*%)/g);
+
+//remove duplicates
+let placeholderArr = matches.filter(function(item, pos, self) {
+  return self.indexOf(item) == pos;
+})
+
 //display placeholders and for each prompt for a value
 let placeholderObj = {};
 
@@ -96,12 +102,21 @@ reviewValues(placeholderObj);
 //replace template placeholders with values
 let content = tpl;
 Object.keys(placeholderObj).forEach(function(key){
-  content = content.replace(key,placeholderObj[key]);
+  let regex = new RegExp(key,'g');
+  content = content.replace(regex,placeholderObj[key]);
 });
+
+console.log('---BEGIN OUTPUT---');
+console.log('\n');
+console.log(content);
+console.log('\n');
+console.log('---END OUTPUT---');
 
 //save to file
 if(yargs.argv.save){
-  fs.writeFileSync(yargs.argv.save,content);
+  fs.writeFileSync(yargs.argv.save,content,{
+    encoding: 'utf8'
+  });
 }
 
 //print to file
@@ -110,5 +125,4 @@ if(yargs.argv.printer){
   //print(content,yargs.argv.printer);
 }
 
-console.log(content);
 yargs.argv = yargs.help('h').argv;
