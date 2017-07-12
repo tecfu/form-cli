@@ -17,9 +17,14 @@ yargs.option('save',{
 });
 
 const readlineSync = require('readline-sync');
+readlineSync.setDefaultOptions({
+  prompt: '> '
+});
+
 const insertValue = function(key,obj){
   let keyName = key.replace(/%/g,'');
-  let value = readlineSync.question('Enter value for '+keyName+':');
+  console.log('Enter value for '+keyName+':');
+  let value = readlineSync.prompt();
   obj[key] = value;
   return obj;
 }
@@ -43,9 +48,15 @@ const reviewValues = function(obj){
   let reviewTable = table(header,rows).render();
   console.log(reviewTable);
 
-  if (!readlineSync.keyInYN('Is this correct?')) {
+  console.log('Is this correct?');
+  let reviewAnswer = readlineSync.prompt({
+    limit: ['y','n']
+  });
+
+  if (reviewAnswer === 'n') {
     let text = 'Enter the line number for each value that needs editing.\nSeparated the numbers by commas.\nLeave blank to skip.';
-    let values = readlineSync.question(text);
+    console.log(text);
+    let values = readlineSync.prompt();
     if(values.length){
       let editsArr = values.split(',');
       editsArr.forEach(function(valueStr){
