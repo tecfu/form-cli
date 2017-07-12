@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "A command line utility to populate placeholders in a form template and save or print the output.",
   "main": "src/main.js",
+  "bin": {
+    "form-cli": "src/main.js"
+  },
+  "preferGlobal": true,
   "scripts": {
     "test": ""
   },
