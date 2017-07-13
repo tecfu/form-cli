@@ -42,8 +42,8 @@ const reviewValues = function(obj){
       value: 'Value'
     }
   ];
-  let rows = Object.keys(obj).map(function(value,index){
-    return [index,value,placeholderObj[value]];
+  let rows = Object.keys(obj).map(function(key,index){
+    return [index,key,obj[key]];
   });
   let reviewTable = table(header,rows).render();
   console.log(reviewTable);
@@ -85,7 +85,7 @@ let matches = tpl.match(/(%\w*%)/g);
 
 //remove duplicates
 let placeholderArr = matches.filter(function(item, pos, self) {
-  return self.indexOf(item) == pos;
+  return self.indexOf(item) === pos;
 })
 
 //display placeholders and for each prompt for a value
@@ -112,17 +112,35 @@ console.log(content);
 console.log('\n');
 console.log('---END OUTPUT---');
 
-//save to file
+//save to file to template path + 'populated' unless otherwise specified
+let savePath;
 if(yargs.argv.save){
-  fs.writeFileSync(yargs.argv.save,content,{
-    encoding: 'utf8'
-  });
+  savePath = yargs.argv.save;
 }
+else{
+  savePath = yargs.argv.t
+  let savePathArr = savePath.split('/');
+  let fileName = savePathArr.pop();
+  let fileNameArr = fileName.split('.');
+  let fileExt;
+  if(fileNameArr.length > 1){
+    fileExt = fileNameArr.pop();
+  }
+  else{
+    fileExt = '';
+  }
+  savePath = fileNameArr.join('.') + '.populated.' + fileExt;
+}
+
+//save the output 
+fs.writeFileSync(savePath,content,{
+  encoding: 'utf8'
+});
 
 //print to file
 if(yargs.argv.printer){
-  const print = require('./print.js');
-  //print(content,yargs.argv.printer);
+  const printer = require('./print.js');
+  printer(content,yargs.argv.printer);
 }
 
 yargs.argv = yargs.help('h').argv;
