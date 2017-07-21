@@ -1,6 +1,6 @@
 {
   "name": "form-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A command line utility to populate placeholders in a form template and save or print the output.",
   "main": "src/main.js",
   "bin": {
