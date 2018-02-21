@@ -14,7 +14,7 @@ npm i -g form-cli
 - somefile.txt
 
 ```
-Hi there, <%YOUR_NAME%>.
+Hi there, %YOUR_NAME%.
 ```
 
 ## Usage:
