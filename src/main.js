@@ -80,26 +80,16 @@ const reviewValues = function(obj){
   }
 }
 
-const customSavePath = function(defaultSavePath){
-  let qText = "Enter path or leave blank to use default (" + defaultSavePath + ")\n> ";
+const customFileName = function(defaultFileName){
+  let qText = "Enter filename or leave blank to use default (" + defaultFileName + ")\n> ";
   let answer = readlineSync.question(qText);
   
   //yes
   if(answer.trim().length > 0){
-    //make sure parent directory of save path is writable
-    try {
-      let parentDir = path.dirname(answer);
-      fs.accessSync(parentDir, fs.W_OK);
-    }
-    catch(err){
-      //try again
-      console.log(err);
-      console.log("Bad filepath. Let's try again.\n");
-      return customSavePath(defaultSavePath);
-    }
     return answer;
   }
-  return defaultSavePath;
+
+  return defaultFileName;
 }
 
 //get template
@@ -164,7 +154,7 @@ else{
     saveOutputPath = process.cwd() + '/' + tplFileName + '.output.' + timestamp + '.' + tplFileNameExt;
 
     //give user option to customize save path
-    saveOutputPath = customSavePath(saveOutputPath);
+    saveOutputPath = customFileName(saveOutputPath);
   }
 }
 if(saveOutput){
@@ -182,7 +172,7 @@ let answer = readlineSync.prompt({
 });
 if(answer === 'y'){
   saveInput = true;
-  saveInputPath = customSavePath(saveInputPath);
+  saveInputPath = customFileName(saveInputPath);
 }
 if(saveInput){
   fs.writeFileSync(saveInputPath,JSON.stringify(placeholderObj,null,'\t'),{
