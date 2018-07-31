@@ -1,6 +1,6 @@
 {
   "name": "form-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A command line utility to populate placeholders in a form template and save or print the output.",
   "main": "src/main.js",
   "bin": {
@@ -27,11 +27,11 @@
   },
   "homepage": "https://github.com/tecfu/form-cli#readme",
   "dependencies": {
+    "@digitalattitude/printer": "git+https://git@github.com/dtttd/node-printer.git",
     "chalk": "^2.0.1",
     "moment": "^2.18.1",
-    "printer": "^0.2.2",
-    "readline-sync": "^1.4.7",
-    "tty-table": "^2.5.3",
+    "readline-sync": "^1.4.9",
+    "tty-table": "^2.6.8",
     "yargs": "^8.0.2"
   }
 }
