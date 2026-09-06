@@ -55,7 +55,22 @@ Continuous integration runs the tests on Node.js 22 and 24.
 
 ## Docker
 
+Docker is an optional way to run `form-cli` without installing Node.js on the host. It is most useful for automated, isolated, or otherwise controlled environments. For normal interactive use—and especially when using local printers—installing `form-cli` directly is recommended.
+
+Build the image from this repository:
+
 ```sh
 docker build -t form-cli .
-docker run --rm -it -v "$PWD:/home" form-cli --template /home/form.txt
 ```
+
+Run it against a template in the current directory:
+
+```sh
+docker run --rm -it \
+  -v "$PWD:/work" \
+  form-cli --template /work/form.txt
+```
+
+The container runs the CLI with `/work` as its working directory, so paths passed to `form-cli` should refer to files in the mounted directory.
+
+Printing from inside the container is not recommended because the container does not automatically have access to printers configured on the host. Use a native installation for `--printer`.
