@@ -1,35 +1,36 @@
-// use: node printFile.js [filePath printerName]
-const fn = function(content,printerName){
-  var printer = require("printer");
+const { execFile } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
-  if(!printerName){
-    printerName = printer.getDefaultPrinterName();
-    if(typeof printerName === 'undefined'){
-      console.error('No printer name given and no default printer set.');
-      return false;
-    }
-  }
-  
-  console.log('platform:', process.platform);
-  console.log('trying to print content.');
-
-  if( process.platform != 'win32') {
-    printer.printDirect({
-      data: content,
-      printer: printerName,
-      type: 'TEXT',
-      success:function(jobID){
-        console.log("sent to printer with ID: "+jobID);
-      },
-      error:function(err){
-        console.log(err);
-      }
-    });
-  } 
-  else{
+function print(content, printerName) {
+  if (process.platform === 'win32') {
     console.error("Can't print to win32 - sry");
     return false;
   }
-};
 
-module.exports = fn;
+  const tempPath = path.join(os.tmpdir(), `form-cli-${process.pid}-${Date.now()}.txt`);
+  fs.writeFileSync(tempPath, content, 'utf8');
+
+  const command = 'lp';
+  const args = printerName ? ['-d', printerName, tempPath] : [tempPath];
+
+  execFile(command, args, error => {
+    try {
+      fs.unlinkSync(tempPath);
+    } catch (cleanupError) {
+      console.error(`Unable to remove temporary print file: ${cleanupError.message}`);
+    }
+
+    if (error) {
+      console.error(`Unable to print: ${error.message}`);
+      return;
+    }
+
+    console.log('Sent to printer.');
+  });
+
+  return true;
+}
+
+module.exports = print;

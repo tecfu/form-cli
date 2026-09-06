@@ -2,189 +2,178 @@
 
 const fs = require('fs');
 const path = require('path');
-const moment = require('moment');
-const timestamp = moment().format('YYYYMMDDhhmmss');
 const chalk = require('chalk');
-
-let yargs = require('yargs');
-yargs.strict();
-yargs.option('template',{
-  alias:'t',
-  describe:'File path of template.',
-  demandOption: true
-});
-yargs.option('printer',{
-  alias:'p',
-  describe:'Name of printer to print to.'
-});
-yargs.option('save',{
-  alias:'s',
-  describe:'Save the file to the path specified.',
-  default:false
-});
-
 const readlineSync = require('readline-sync');
-readlineSync.setDefaultOptions({
-  prompt: '> '
-});
+const table = require('tty-table');
 
-const insertValue = function(key,obj){
-  let keyName = key.replace(/%/g,'');
+readlineSync.setDefaultOptions({ prompt: '> ' });
+
+function createTimestamp(date = new Date()) {
+  const pad = value => String(value).padStart(2, '0');
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate())
+  ].join('') + pad(date.getHours()) + pad(date.getMinutes()) + pad(date.getSeconds());
+}
+
+function findPlaceholders(template) {
+  const matches = template.match(/%[^%\r\n]+%/g) || [];
+  return [...new Set(matches)];
+}
+
+function renderTemplate(template, values) {
+  return Object.keys(values).reduce(
+    (content, key) => content.replaceAll(key, () => values[key]),
+    template
+  );
+}
+
+function insertValue(key, values) {
+  const keyName = key.replace(/%/g, '');
   console.log('Enter value for ' + chalk.green(keyName) + ':');
-  let value = readlineSync.prompt();
-  obj[key] = value;
-  return obj;
+  values[key] = readlineSync.prompt();
+  return values;
 }
 
-const reviewValues = function(obj){
-  let table = require('tty-table');
-  let header = [
-    {
-      value: 'Line #',
-    },
-    {
-      value: 'Field'
-    },
-    {
-      value: 'Value'
-    }
+function reviewValues(values) {
+  const keys = Object.keys(values);
+  if (!keys.length) return;
+
+  const header = [
+    { value: 'Line #' },
+    { value: 'Field' },
+    { value: 'Value' }
   ];
-  let rows = Object.keys(obj).map(function(key,index){
-    return [index,key,obj[key]];
-  });
-  let reviewTable = table(header,rows).render();
-  console.log(reviewTable);
+  const rows = keys.map((key, index) => [index + 1, key, values[key]]);
+
+  console.log(table(header, rows).render());
   console.log('Is this correct? y/n');
-  let reviewAnswer = readlineSync.prompt({
-    limit: ['y','n']
-  });
+  const reviewAnswer = readlineSync.prompt({ limit: ['y', 'n'] });
 
-  if (reviewAnswer === 'n') {
-    let text = 'Enter the line number for each value that needs editing.\nSeparated the numbers by commas.\nLeave blank to skip.';
-    console.log(text);
-    let values = readlineSync.prompt();
-    if(values.length){
-      let editsArr = values.split(',');
-      editsArr.forEach(function(valueStr){
-        let value = valueStr * 1;
-        if(typeof value === 'number' && value < rows.length){
-          let checkKey = rows[value][1];
-          insertValue(checkKey,obj);
+  while (reviewAnswer === 'n') {
+    console.log('Enter the line number for each value that needs editing.');
+    console.log('Separate the numbers by commas. Leave blank to skip.');
+    const input = readlineSync.prompt().trim();
+
+    if (input) {
+      input.split(',').forEach(valueStr => {
+        const value = Number(valueStr.trim());
+        if (Number.isInteger(value) && value >= 1 && value <= rows.length) {
+          insertValue(rows[value - 1][1], values);
+        } else {
+          console.log('Entry ' + valueStr.trim() + ' not recognized. Try again.');
         }
-        else{
-          console.log('Entry '+valueStr+' not recognized. Try again.');
-        }
-      })
+      });
     }
-    reviewValues(obj);
+
+    console.log(table(header, keys.map((key, index) => [index + 1, key, values[key]])).render());
+    console.log('Is this correct? y/n');
+    reviewAnswer = readlineSync.prompt({ limit: ['y', 'n'] });
   }
 }
 
-const customFileName = function(defaultFileName){
-  let qText = "Enter filename or leave blank to use default (" + defaultFileName + ")\n> ";
-  let answer = readlineSync.question(qText);
-  
-  //yes
-  if(answer.trim().length > 0){
-    return answer;
+function customFileName(defaultFileName) {
+  const answer = readlineSync.question(
+    'Enter filename or leave blank to use default (' + defaultFileName + ')\n> '
+  );
+  return answer.trim().length > 0 ? answer : defaultFileName;
+}
+
+function defaultOutputPath(templatePath, timestamp = createTimestamp()) {
+  const templateName = path.basename(templatePath);
+  const extension = path.extname(templateName);
+  const stem = extension ? templateName.slice(0, -extension.length) : templateName;
+  return path.join(process.cwd(), stem + '.output.' + timestamp + extension);
+}
+
+function defaultInputPath(templatePath, timestamp = createTimestamp()) {
+  const templateName = path.basename(templatePath);
+  const extension = path.extname(templateName);
+  const stem = extension ? templateName.slice(0, -extension.length) : templateName;
+  return path.join(process.cwd(), stem + '.inputs.' + timestamp + '.json');
+}
+
+function parseArgs(argv) {
+  return require('yargs/yargs')(argv)
+    .option('template', {
+      alias: 't',
+      describe: 'File path of template.',
+      demandOption: true,
+      type: 'string'
+    })
+    .option('printer', {
+      alias: 'p',
+      describe: 'Name of printer to print to.',
+      type: 'string'
+    })
+    .option('save', {
+      alias: 's',
+      describe: 'Save the file to the path specified.',
+      type: 'string'
+    })
+    .strict()
+    .help('h')
+    .parse();
+}
+
+function main(argv = process.argv.slice(2)) {
+  const args = parseArgs(argv);
+  const template = fs.readFileSync(args.template, 'utf8');
+  const placeholders = findPlaceholders(template);
+  const values = {};
+
+  placeholders.forEach(key => insertValue(key, values));
+  reviewValues(values);
+
+  const content = renderTemplate(template, values);
+  console.log('\n');
+  console.log(chalk.red('---BEGIN OUTPUT---'));
+  console.log(content);
+  console.log(chalk.red('---END OUTPUT---'));
+  console.log('\n');
+
+  let saveOutput = true;
+  let saveOutputPath = args.save;
+  if (!saveOutputPath) {
+    console.log('Save file? y/n');
+    const answer = readlineSync.prompt({ limit: ['y', 'n'] });
+    if (answer === 'n') {
+      saveOutput = false;
+    } else {
+      saveOutputPath = customFileName(defaultOutputPath(args.template));
+    }
   }
 
-  return defaultFileName;
-}
-
-//get template
-const tplPath = yargs.argv.template;
-let tpl = fs.readFileSync(tplPath,{
-  encoding: 'utf8'
-});
-
-//get template name for default saved filenames
-let tplPathArr = yargs.argv.template.split('/');
-let tplFileName = tplPathArr.pop();
-let tplFileNameExt = tplFileName.split('.').pop();
-
-//scan the template for placeholders 
-let matches = tpl.match(/(%\w*%)/g);
-
-//remove duplicates
-let placeholderArr = matches.filter(function(item, pos, self) {
-  return self.indexOf(item) === pos;
-})
-
-//display placeholders and for each prompt for a value
-let placeholderObj = {};
-
-//insert values
-placeholderArr.forEach(function(key){
-  placeholderObj = insertValue(key,placeholderObj);
-})
-
-//review values
-reviewValues(placeholderObj);
-
-//replace template placeholders with values
-let content = tpl;
-Object.keys(placeholderObj).forEach(function(key){
-  let regex = new RegExp(key,'g');
-  content = content.replace(regex,placeholderObj[key]);
-});
-
-console.log('\n');
-console.log(chalk.red('---BEGIN OUTPUT---'));
-console.log(content);
-console.log(chalk.red('---END OUTPUT---'));
-console.log('\n');
-
-//save output to file?
-let saveOutputPath;
-let saveOutput = true;
-if(yargs.argv.save){
-  saveOutputPath = yargs.argv.save;
-}
-else{
-  //ask user if they want to save
-  console.log("Save file? y/n");
-  let answer = readlineSync.prompt({
-    limit: ['y','n']
-  });
-  if(answer === 'n'){
-    saveOutput = false;
+  if (saveOutput) {
+    fs.writeFileSync(saveOutputPath, content, 'utf8');
   }
-  else{
-    saveOutputPath = process.cwd() + '/' + tplFileName + '.output.' + timestamp + '.' + tplFileNameExt;
 
-    //give user option to customize save path
-    saveOutputPath = customFileName(saveOutputPath);
+  const saveInputPath = defaultInputPath(args.template);
+  console.log('Save input values? y/n');
+  const saveInputAnswer = readlineSync.prompt({ limit: ['y', 'n'] });
+  if (saveInputAnswer === 'y') {
+    fs.writeFileSync(customFileName(saveInputPath), JSON.stringify(values, null, '\t'), 'utf8');
   }
-}
-if(saveOutput){
-  fs.writeFileSync(saveOutputPath,content,{
-    encoding: 'utf8'
-  });
-}
 
-//save input to file?
-let saveInput = false;
-let saveInputPath = process.cwd() + '/' + tplFileName + '.inputs.' + timestamp + '.json';
-console.log('Save input values? y/n');
-let answer = readlineSync.prompt({
-  limit: ['y','n']
-});
-if(answer === 'y'){
-  saveInput = true;
-  saveInputPath = customFileName(saveInputPath);
-}
-if(saveInput){
-  fs.writeFileSync(saveInputPath,JSON.stringify(placeholderObj,null,'\t'),{
-    encoding: 'utf8'
-  });
+  if (args.printer) {
+    const printer = require('./print.js');
+    printer(content, args.printer);
+  }
+
+  console.log(chalk.green('JOB COMPLETE.'));
 }
 
-//print to file
-if(yargs.argv.printer){
-  const printer = require('./print.js');
-  printer(content,yargs.argv.printer);}
+module.exports = {
+  createTimestamp,
+  findPlaceholders,
+  renderTemplate,
+  defaultOutputPath,
+  defaultInputPath,
+  parseArgs,
+  reviewValues
+};
 
-yargs.argv = yargs.help('h').argv;
-
-console.log(chalk.green('JOB COMPLETE.'));
+if (require.main === module) {
+  main();
+}

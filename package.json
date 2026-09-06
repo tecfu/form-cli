@@ -7,8 +7,11 @@
     "form-cli": "src/main.js"
   },
   "preferGlobal": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": ""
+    "test": "node --test test/main.test.js"
   },
   "repository": {
     "type": "git",
@@ -17,8 +20,7 @@
   "keywords": [
     "cli",
     "form",
-    "terminal",
-    "form"
+    "terminal"
   ],
   "author": "tecfu",
   "license": "GPL-2.0",
@@ -27,7 +29,6 @@
   },
   "homepage": "https://github.com/tecfu/form-cli#readme",
   "dependencies": {
-    "@digitalattitude/printer": "git+https://git@github.com/dtttd/node-printer.git",
     "chalk": "^2.4.2",
     "moment": "^2.24.0",
     "readline-sync": "^1.4.9",
