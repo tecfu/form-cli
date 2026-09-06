@@ -7,8 +7,11 @@
     "form-cli": "src/main.js"
   },
   "preferGlobal": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": ""
+    "test": "node --test test/main.test.js"
   },
   "repository": {
     "type": "git",
@@ -17,8 +20,7 @@
   "keywords": [
     "cli",
     "form",
-    "terminal",
-    "form"
+    "terminal"
   ],
   "author": "tecfu",
   "license": "GPL-2.0",
