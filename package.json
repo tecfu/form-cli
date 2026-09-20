@@ -1,12 +1,11 @@
 {
   "name": "form-cli",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "A command line utility to populate placeholders in a form template and save or print the output.",
   "main": "src/main.js",
   "bin": {
     "form-cli": "src/main.js"
   },
-  "preferGlobal": true,
   "engines": {
     "node": ">=22"
   },
@@ -30,7 +29,6 @@
   "homepage": "https://github.com/tecfu/form-cli#readme",
   "dependencies": {
     "chalk": "^2.4.2",
-    "moment": "^2.24.0",
     "readline-sync": "^1.4.9",
     "tty-table": "^2.7.1",
     "yargs": "^13.2.4"

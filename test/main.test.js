@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 const {
+  reviewValues,
   createTimestamp,
   findPlaceholders,
   renderTemplate,
@@ -31,6 +32,22 @@ test('renderTemplate treats placeholders and replacement values literally', () =
 test('createTimestamp uses a sortable 24-hour timestamp', () => {
   const date = new Date(2026, 0, 2, 23, 4, 5);
   assert.equal(createTimestamp(date), '20260102230405');
+});
+
+test('reviewValues loops back through editing when the reviewer answers n', () => {
+  const readlineSync = require('readline-sync');
+  const originalPrompt = readlineSync.prompt;
+  const answers = ['n', '1', 'fixed', 'y'];
+  readlineSync.prompt = () => answers.shift() ?? 'y';
+
+  const values = { '%NAME%': 'wrong' };
+  try {
+    reviewValues(values);
+  } finally {
+    readlineSync.prompt = originalPrompt;
+  }
+
+  assert.equal(values['%NAME%'], 'fixed');
 });
 
 test('default paths are platform-safe and preserve template extensions', () => {

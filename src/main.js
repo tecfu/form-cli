@@ -49,7 +49,7 @@ function reviewValues(values) {
 
   console.log(table(header, rows).render());
   console.log('Is this correct? y/n');
-  const reviewAnswer = readlineSync.prompt({ limit: ['y', 'n'] });
+  let reviewAnswer = readlineSync.prompt({ limit: ['y', 'n'] });
 
   while (reviewAnswer === 'n') {
     console.log('Enter the line number for each value that needs editing.');
